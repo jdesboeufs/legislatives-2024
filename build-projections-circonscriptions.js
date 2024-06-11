@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 import {readFile, mkdir} from 'node:fs/promises'
-import {toPairs, sumBy, sortBy} from 'lodash-es'
+import {
+  toPairs,
+  sumBy,
+  sortBy,
+  countBy
+} from 'lodash-es'
 import yaml from 'js-yaml'
 import {readJsonFile, writeJsonFile} from './lib/json.js'
 import {prepareCirconscriptionsHelper} from './lib/circonscriptions.js'
@@ -53,8 +58,6 @@ const output = []
 for (const [codeCirconscription, resultats] of resultatsCirconscriptions.entries()) {
   const preparedResultats = sortBy(toPairs(resultats), ([, nbVoix]) => -nbVoix).map(([nomListe, nbVoix]) => ({nomListe, nbVoix}))
 
-  console.log(`circonscription ${codeCirconscription}: ${preparedResultats[0].nomListe} avec ${preparedResultats[0].nbVoix.toFixed(0)} voix`)
-
   const votesExprimes = sumBy(preparedResultats, 'nbVoix')
 
   const entry = {
@@ -65,5 +68,8 @@ for (const [codeCirconscription, resultats] of resultatsCirconscriptions.entries
 
   output.push(entry)
 }
+
+console.log('Projection en nombre de députés par bloc politique :')
+console.log(countBy(output, circonscription => circonscription.resultats[0].nomListe))
 
 await writeJsonFile('dist/projection-circonscriptions-lg2024.json', output)
