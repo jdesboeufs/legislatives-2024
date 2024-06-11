@@ -48,6 +48,11 @@ On exécute le script qui va produire le fichier `dist/projection-circonscriptio
 node build-projections-circonscriptions.js
 ```
 
+## Fichiers produits
+
+- `dist/projections-circonscriptions-lg2024.json` - [exemple avec le fichier de report de votes fourni](dist-example/projection-circonscriptions-lg2024.json)
+- `dist/projections-circonscriptions-lg2024.csv` - [exemple avec le fichier de report de votes fourni](dist-example/projection-circonscriptions-lg2024.csv)
+
 ## Licence
 
 MIT
