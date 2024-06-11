@@ -1,11 +1,6 @@
 #!/usr/bin/env node
 import {readFile, mkdir} from 'node:fs/promises'
-import {
-  toPairs,
-  sumBy,
-  sortBy,
-  countBy
-} from 'lodash-es'
+import {chain, countBy} from 'lodash-es'
 import yaml from 'js-yaml'
 import {readJsonFile, writeJsonFile} from './lib/json.js'
 import {prepareCirconscriptionsHelper} from './lib/circonscriptions.js'
@@ -31,8 +26,25 @@ for (const commune of resultatsEur2024) {
 
   for (const circonscription of circonscriptions) {
     if (!resultatsCirconscriptions.has(circonscription.codeCirconscription)) {
-      resultatsCirconscriptions.set(circonscription.codeCirconscription, [])
+      resultatsCirconscriptions.set(circonscription.codeCirconscription, {
+        inscrits: 0,
+        votants: 0,
+        blancs: 0,
+        abstentions: 0,
+        nuls: 0,
+        exprimes: 0,
+        voix: {}
+      })
     }
+
+    const circonscriptionEntry = resultatsCirconscriptions.get(circonscription.codeCirconscription)
+
+    circonscriptionEntry.inscrits += commune.inscrits * ratio
+    circonscriptionEntry.votants += commune.votants * ratio
+    circonscriptionEntry.blancs += commune.blancs * ratio
+    circonscriptionEntry.abstentions += commune.abstentions * ratio
+    circonscriptionEntry.nuls += commune.nuls * ratio
+    circonscriptionEntry.exprimes += commune.exprimes * ratio
 
     for (const resultat of commune.resultats) {
       const mappingListe = mapping[resultat.nomListe]
@@ -43,11 +55,8 @@ for (const commune of resultatsEur2024) {
       }
 
       for (const [listeReport, ratioReport] of Object.entries(mappingListe)) {
-        if (!resultatsCirconscriptions.get(circonscription.codeCirconscription)[listeReport]) {
-          resultatsCirconscriptions.get(circonscription.codeCirconscription)[listeReport] = 0
-        }
-
-        resultatsCirconscriptions.get(circonscription.codeCirconscription)[listeReport] += resultat.nbVoix * ratio * (ratioReport / 100)
+        circonscriptionEntry.voix[listeReport] ||= 0
+        circonscriptionEntry.voix[listeReport] += resultat.nbVoix * ratio * (ratioReport / 100)
       }
     }
   }
@@ -55,21 +64,40 @@ for (const commune of resultatsEur2024) {
 
 const output = []
 
-for (const [codeCirconscription, resultats] of resultatsCirconscriptions.entries()) {
-  const preparedResultats = sortBy(toPairs(resultats), ([, nbVoix]) => -nbVoix).map(([nomListe, nbVoix]) => ({nomListe, nbVoix}))
+for (const [codeCirconscription, circonscription] of resultatsCirconscriptions.entries()) {
+  const {exprimes, abstentions, inscrits} = circonscription
 
-  const votesExprimes = sumBy(preparedResultats, 'nbVoix')
+  const preparedResultats = chain(circonscription.voix)
+    .toPairs()
+    .sortBy(([, nbVoix]) => -nbVoix)
+    .map(([nomListe, nbVoix]) => ({nomListe, nbVoix, pourcentage: nbVoix / exprimes * 100}))
+    .value()
+
+  let ecartPremierDeuxieme = null
+
+  if (preparedResultats.length > 1) {
+    ecartPremierDeuxieme = preparedResultats[0].pourcentage - preparedResultats[1].pourcentage
+  }
+
+  if (ecartPremierDeuxieme < 10) {
+    console.log(`circonscription ${codeCirconscription} : écart faible (${ecartPremierDeuxieme.toFixed(2)} points) - Liste en tête : ${preparedResultats[0].nomListe}`)
+  }
 
   const entry = {
     codeCirconscription,
-    votesExprimes,
-    resultats: preparedResultats.map(r => ({...r, pourcentage: r.nbVoix / votesExprimes * 100}))
+    inscrits,
+    votesExprimes: exprimes,
+    abstentions,
+    tauxAbstention: abstentions / inscrits * 100,
+    listeEnTete: preparedResultats[0].nomListe,
+    ecartPremierDeuxieme,
+    resultats: preparedResultats
   }
 
   output.push(entry)
 }
 
-console.log('Projection en nombre de députés par bloc politique :')
+console.log('Projection des blocs politiques en tête :')
 console.log(countBy(output, circonscription => circonscription.resultats[0].nomListe))
 
 await writeJsonFile('dist/projection-circonscriptions-lg2024.json', output)
