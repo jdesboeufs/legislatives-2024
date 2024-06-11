@@ -48,6 +48,12 @@ On exécute le script qui va produire le fichier `dist/projection-circonscriptio
 node build-projections-circonscriptions.js
 ```
 
+Éventuellement il est aussi possible de générer un fichier CSV avec les résultats des Européennes à la maille de la circonscription, sans autre extrapolation que la répartition des communes à cheval sur plusieurs circonscriptions.
+
+```bash
+node build-resultats-eu2024-circo.js
+```
+
 ## Fichiers produits
 
 - `dist/projections-circonscriptions-lg2024.json` - [exemple avec le fichier de report de votes fourni](dist-example/projection-circonscriptions-lg2024.json)
