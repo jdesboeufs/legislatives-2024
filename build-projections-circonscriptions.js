@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-import {readFile} from 'node:fs/promises'
+import {readFile, mkdir} from 'node:fs/promises'
 import {toPairs, sumBy, sortBy} from 'lodash-es'
 import yaml from 'js-yaml'
 import {readJsonFile, writeJsonFile} from './lib/json.js'
 import {prepareCirconscriptionsHelper} from './lib/circonscriptions.js'
+
+await mkdir('dist', {recursive: true})
 
 const mappingFile = await readFile('report-de-votes.yaml', 'utf8')
 const mapping = yaml.load(mappingFile)
