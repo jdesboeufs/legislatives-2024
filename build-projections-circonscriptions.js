@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import {readFile, mkdir} from 'node:fs/promises'
-import {chain, countBy} from 'lodash-es'
+import {readFile, mkdir, writeFile} from 'node:fs/promises'
+import {chain, countBy, omit} from 'lodash-es'
 import yaml from 'js-yaml'
+import Papa from 'papaparse'
 import {readJsonFile, writeJsonFile} from './lib/json.js'
 import {prepareCirconscriptionsHelper} from './lib/circonscriptions.js'
 
@@ -85,12 +86,12 @@ for (const [codeCirconscription, circonscription] of resultatsCirconscriptions.e
 
   const entry = {
     codeCirconscription,
-    inscrits,
-    votesExprimes: exprimes,
-    abstentions,
-    tauxAbstention: abstentions / inscrits * 100,
+    inscrits: roundPrecision(inscrits, 0),
+    votesExprimes: roundPrecision(exprimes, 0),
+    abstentions: roundPrecision(abstentions, 0),
+    tauxAbstention: roundPrecision(abstentions / inscrits * 100, 2),
     listeEnTete: preparedResultats[0].nomListe,
-    ecartPremierDeuxieme,
+    ecartPremierDeuxieme: roundPrecision(ecartPremierDeuxieme, 2),
     resultats: preparedResultats
   }
 
@@ -101,3 +102,16 @@ console.log('Projection des blocs politiques en tête :')
 console.log(countBy(output, circonscription => circonscription.resultats[0].nomListe))
 
 await writeJsonFile('dist/projection-circonscriptions-lg2024.json', output)
+
+const csvData = Papa.unparse(output.map(i => omit(i, 'resultats')), {
+  delimiter: ','
+})
+
+await writeFile('dist/projection-circonscriptions-lg2024.csv', csvData)
+
+/* Helpers */
+
+function roundPrecision(value, precision) {
+  const multiplier = 10 ** precision
+  return Math.round(value * multiplier) / multiplier
+}
