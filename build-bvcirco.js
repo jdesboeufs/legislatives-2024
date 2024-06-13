@@ -1,4 +1,4 @@
-import {writeFile} from 'node:fs/promises'
+import {writeFile, mkdir} from 'node:fs/promises'
 import got from 'got'
 import Papa from 'papaparse'
 import iconv from 'iconv-lite'
@@ -57,4 +57,6 @@ const rows = result.data.slice(1).map(row => ({
 }))
 
 const csvContent = Papa.unparse(rows, {header: true, delimiter: ','})
+
+await mkdir('dist', {recursive: true})
 await writeFile('dist/bureaux-de-vote-circonscriptions.csv', csvContent)
