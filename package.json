@@ -7,10 +7,13 @@
   "type": "module",
   "dependencies": {
     "@etalab/decoupage-administratif": "^4.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
     "got": "^14.4.1",
     "iconv-lite": "^0.6.3",
     "js-yaml": "^4.1.0",
     "lodash-es": "^4.17.21",
+    "morgan": "^1.10.0",
     "node-xlsx": "^0.24.0",
     "papaparse": "^5.4.1",
     "xml2js": "^0.6.2"
@@ -26,7 +29,8 @@
         "error",
         "never"
       ],
-      "max-depth": "off"
+      "max-depth": "off",
+      "unicorn/prevent-abbreviations": "off"
     }
   },
   "scripts": {
