@@ -29,12 +29,12 @@ const serialize = new Transform({
         nuls: bv.nuls,
         pourcentageNulsInscrits: bv.pourcentageNulsInscrits,
         pourcentageNulsVotants: bv.pourcentageNulsVotants,
-        nuanceListe: liste.nuanceListe,
-        libelleAbregeListe: liste.libelleAbregeListe,
-        libelleListe: liste.libelleListe,
-        voixListe: liste.voixListe,
-        pourcentageVoixInscritsListe: liste.pourcentageVoixInscritsListe,
-        pourcentageVoixExprimesListe: liste.pourcentageVoixExprimesListe
+        nuanceListe: liste.nuance,
+        libelleAbregeListe: liste.libelleAbrege,
+        libelleListe: liste.libelle,
+        voixListe: liste.voix,
+        pourcentageVoixInscritsListe: liste.pourcentageVoixInscrits,
+        pourcentageVoixExprimesListe: liste.pourcentageVoixExprimes
       }], {header: !this.headerSent, newline: '\n', quotes: true}) + '\n')
 
       this.headerSent = true
