@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import {writeFile, mkdir} from 'node:fs/promises'
-import {computeResultats} from './lib/eur2024.js'
+import {computeResultats} from './lib/eur2024-legacy.js'
 
 await mkdir('dist', {recursive: true})
 
