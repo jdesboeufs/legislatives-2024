@@ -33,18 +33,18 @@ app.use(cors({origin: true}))
 
 app.use((req, res, next) => {
   res.sendItems = async items => {
-    try {
-      if (req.query.format === 'csv') {
+    if (req.query.format === 'csv') {
+      try {
         const csvData = await asCsv(items)
         res.type('text/csv').send(csvData)
-      } else {
-        res.send(items)
+      } catch (error) {
+        res.status(500).send({
+          error: 'Impossible de générer le fichier CSV',
+          internal: error.message
+        })
       }
-    } catch (error) {
-      res.status(500).send({
-        error: 'Impossible de générer le fichier CSV',
-        internal: error.message
-      })
+    } else {
+      res.send(items)
     }
   }
 
