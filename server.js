@@ -5,6 +5,7 @@ import cors from 'cors'
 import {keyBy, groupBy} from 'lodash-es'
 import {createReader} from './lib/eu2024-reader.js'
 import {aggregateBureauxDeVote} from './lib/aggregate.js'
+import {asCsv} from './lib/formatters/csv.js'
 
 /* Préparation des données brutes */
 
@@ -30,6 +31,26 @@ if (process.env.NODE_ENV !== 'production') {
 
 app.use(cors({origin: true}))
 
+app.use((req, res, next) => {
+  res.sendItems = async items => {
+    try {
+      if (req.query.format === 'csv') {
+        const csvData = await asCsv(items)
+        res.type('text/csv').send(csvData)
+      } else {
+        res.send(items)
+      }
+    } catch (error) {
+      res.status(500).send({
+        error: 'Impossible de générer le fichier CSV',
+        internal: error.message
+      })
+    }
+  }
+
+  next()
+})
+
 app.get('/communes/:codeCommune/bureaux-de-vote/:codeBureauDeVote', (req, res) => {
   const bureauDeVote = bureauxDeVoteIndex[`${req.params.codeCommune}_${req.params.codeBureauDeVote.padStart(4, '0')}`]
 
@@ -47,7 +68,7 @@ app.get('/circonscriptions/:codeCirconscription/bureaux-de-vote', (req, res) => 
     return res.status(404).send({error: 'Circonscription non trouvée'})
   }
 
-  res.send(circonscription)
+  res.sendItems(circonscription)
 })
 
 app.get('/circonscriptions/:codeCirconscription', (req, res) => {
@@ -67,6 +88,17 @@ app.get('/circonscriptions/:codeCirconscription', (req, res) => {
   res.send(circonscription)
 })
 
+app.get('/circonscriptions', (req, res) => {
+  const circonscriptions = Object.values(circonscriptionsIndex).map(bureauxDeVote => ({
+    codeDepartement: bureauxDeVote[0].codeDepartement,
+    nomDepartement: bureauxDeVote[0].nomDepartement,
+    codeCirconscription: bureauxDeVote[0].codeCirconscription,
+    ...aggregateBureauxDeVote(bureauxDeVote)
+  }))
+
+  res.sendItems(circonscriptions)
+})
+
 app.get('/communes/:codeCommune/bureaux-de-vote', (req, res) => {
   const bureauxDeVote = communesIndex[req.params.codeCommune]
 
@@ -74,7 +106,7 @@ app.get('/communes/:codeCommune/bureaux-de-vote', (req, res) => {
     return res.status(404).send({error: 'Commune non trouvée'})
   }
 
-  res.send(bureauxDeVote)
+  res.sendItems(bureauxDeVote)
 })
 
 app.get('/communes/:codeCommune', (req, res) => {
@@ -102,7 +134,7 @@ app.get('/departements/:codeDepartement/bureaux-de-vote', (req, res) => {
     return res.status(404).send({error: 'Département non trouvé'})
   }
 
-  res.send(bureauxDeVote)
+  res.sendItems(bureauxDeVote)
 })
 
 app.get('/departements/:codeDepartement', (req, res) => {
