@@ -6,6 +6,7 @@ import {keyBy, groupBy} from 'lodash-es'
 import {createReader} from './lib/eu2024-reader.js'
 import {aggregateBureauxDeVote} from './lib/aggregate.js'
 import {asCsv} from './lib/formatters/csv.js'
+import {projectResults} from './lib/project.js'
 
 /* Préparation des données brutes */
 
@@ -30,9 +31,22 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 app.use(cors({origin: true}))
+app.use(express.json())
+
+app.use((req, res, next) => {
+  if (!['HEAD', 'GET', 'POST'].includes(req.method)) {
+    return res.status(405).send({error: 'Méthode non autorisée'})
+  }
+
+  next()
+})
 
 app.use((req, res, next) => {
   res.sendItems = async items => {
+    if (req.body.projection) {
+      items = items.map(item => ({...item, listes: projectResults(item.listes, req.body.projection)}))
+    }
+
     if (req.query.format === 'csv') {
       try {
         const csvData = await asCsv(items)
@@ -48,20 +62,27 @@ app.use((req, res, next) => {
     }
   }
 
+  res.sendItem = item => {
+    res.send(req.body.projection
+      ? {...item, listes: projectResults(item.listes, req.body.projection)}
+      : item
+    )
+  }
+
   next()
 })
 
-app.get('/communes/:codeCommune/bureaux-de-vote/:codeBureauDeVote', (req, res) => {
+app.all('/communes/:codeCommune/bureaux-de-vote/:codeBureauDeVote', (req, res) => {
   const bureauDeVote = bureauxDeVoteIndex[`${req.params.codeCommune}_${req.params.codeBureauDeVote.padStart(4, '0')}`]
 
   if (!bureauDeVote) {
     return res.status(404).send({error: 'Bureau de vote non trouvé'})
   }
 
-  res.send(bureauDeVote)
+  res.sendItem(bureauDeVote)
 })
 
-app.get('/circonscriptions/:codeCirconscription/bureaux-de-vote', (req, res) => {
+app.all('/circonscriptions/:codeCirconscription/bureaux-de-vote', (req, res) => {
   const circonscription = circonscriptionsIndex[req.params.codeCirconscription]
 
   if (!circonscription) {
@@ -71,7 +92,7 @@ app.get('/circonscriptions/:codeCirconscription/bureaux-de-vote', (req, res) => 
   res.sendItems(circonscription)
 })
 
-app.get('/circonscriptions/:codeCirconscription', (req, res) => {
+app.all('/circonscriptions/:codeCirconscription', (req, res) => {
   const bureauxDeVote = circonscriptionsIndex[req.params.codeCirconscription]
 
   if (!bureauxDeVote) {
@@ -85,10 +106,10 @@ app.get('/circonscriptions/:codeCirconscription', (req, res) => {
     ...aggregateBureauxDeVote(bureauxDeVote)
   }
 
-  res.send(circonscription)
+  res.sendItem(circonscription)
 })
 
-app.get('/circonscriptions', (req, res) => {
+app.all('/circonscriptions', (req, res) => {
   const circonscriptions = Object.values(circonscriptionsIndex).map(bureauxDeVote => ({
     codeDepartement: bureauxDeVote[0].codeDepartement,
     nomDepartement: bureauxDeVote[0].nomDepartement,
@@ -99,7 +120,7 @@ app.get('/circonscriptions', (req, res) => {
   res.sendItems(circonscriptions)
 })
 
-app.get('/communes/:codeCommune/bureaux-de-vote', (req, res) => {
+app.all('/communes/:codeCommune/bureaux-de-vote', (req, res) => {
   const bureauxDeVote = communesIndex[req.params.codeCommune]
 
   if (!bureauxDeVote) {
@@ -109,7 +130,7 @@ app.get('/communes/:codeCommune/bureaux-de-vote', (req, res) => {
   res.sendItems(bureauxDeVote)
 })
 
-app.get('/communes/:codeCommune', (req, res) => {
+app.all('/communes/:codeCommune', (req, res) => {
   const bureauxDeVote = communesIndex[req.params.codeCommune]
 
   if (!bureauxDeVote) {
@@ -124,10 +145,10 @@ app.get('/communes/:codeCommune', (req, res) => {
     ...aggregateBureauxDeVote(bureauxDeVote)
   }
 
-  res.send(commune)
+  res.sendItem(commune)
 })
 
-app.get('/departements/:codeDepartement/bureaux-de-vote', (req, res) => {
+app.all('/departements/:codeDepartement/bureaux-de-vote', (req, res) => {
   const bureauxDeVote = departementsIndex[req.params.codeDepartement]
 
   if (!bureauxDeVote) {
@@ -137,7 +158,7 @@ app.get('/departements/:codeDepartement/bureaux-de-vote', (req, res) => {
   res.sendItems(bureauxDeVote)
 })
 
-app.get('/departements/:codeDepartement', (req, res) => {
+app.all('/departements/:codeDepartement', (req, res) => {
   const bureauxDeVote = departementsIndex[req.params.codeDepartement]
 
   if (!bureauxDeVote) {
@@ -150,7 +171,7 @@ app.get('/departements/:codeDepartement', (req, res) => {
     ...aggregateBureauxDeVote(bureauxDeVote)
   }
 
-  res.send(departement)
+  res.sendItem(departement)
 })
 
 const port = process.env.PORT || 5000
