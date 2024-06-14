@@ -3,6 +3,7 @@ import express from 'express'
 import morgan from 'morgan'
 import cors from 'cors'
 import {keyBy, groupBy} from 'lodash-es'
+import got from 'got'
 import {createReader} from './lib/eu2024-reader.js'
 import {aggregateBureauxDeVote} from './lib/aggregate.js'
 import {asCsv} from './lib/formatters/csv.js'
@@ -41,10 +42,34 @@ app.use((req, res, next) => {
   next()
 })
 
-app.use((req, res, next) => {
+const ALLOWED_DOMAIN_PREFIX = ['https://gist.githubusercontent.com']
+
+app.use(async (req, res, next) => {
+  if (req.query.projectionUrl) {
+    if (!ALLOWED_DOMAIN_PREFIX.some(prefix => req.query.projectionUrl.startsWith(prefix))) {
+      return res.status(400).send({error: 'URL de projection non autorisée'})
+    }
+
+    try {
+      const rawProjection = await got(req.query.projectionUrl).json()
+
+      if (!rawProjection.projection) {
+        return res.status(400).send({error: 'Projection invalide'})
+      }
+
+      req.projection = rawProjection.projection
+    } catch (error) {
+      return res.status(400).send({error: 'Projection introuvable', internal: error.message})
+    }
+  }
+
+  if (req.body.projection) {
+    req.projection = req.body.projection
+  }
+
   res.sendItems = async items => {
-    if (req.body.projection) {
-      items = items.map(item => ({...item, listes: projectResults(item.listes, req.body.projection)}))
+    if (req.projection) {
+      items = items.map(item => ({...item, listes: projectResults(item.listes, req.projection)}))
     }
 
     if (req.query.format === 'csv') {
@@ -63,8 +88,8 @@ app.use((req, res, next) => {
   }
 
   res.sendItem = item => {
-    res.send(req.body.projection
-      ? {...item, listes: projectResults(item.listes, req.body.projection)}
+    res.send(req.projection
+      ? {...item, listes: projectResults(item.listes, req.projection)}
       : item
     )
   }
