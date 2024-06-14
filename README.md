@@ -58,15 +58,15 @@ Exemple : https://legislatives-2024-livingdata-a42c348e.koyeb.app/departements/0
 
 `GET /communes/:codeCommune` => résultats agrégés pour la commune
 
-Exemple : https://legislatives-2024-livingdata-a42c348e.koyeb.app/commune/01001
+Exemple : https://legislatives-2024-livingdata-a42c348e.koyeb.app/communes/01001
 
 `GET /communes/:codeCommune/bureaux-de-vote` :clipboard: => résultats des bureaux de vote de la commune
 
-Exemple : https://legislatives-2024-livingdata-a42c348e.koyeb.app/commune/01001/bureaux-de-vote
+Exemple : https://legislatives-2024-livingdata-a42c348e.koyeb.app/communes/01001/bureaux-de-vote
 
 `GET /communes/:codeCommune/bureaux-de-vote/:numeroBureauDeVote` => résultats du bureau de vote
 
-Exemple : https://legislatives-2024-livingdata-a42c348e.koyeb.app/commune/01001/bureaux-de-vote/1
+Exemple : https://legislatives-2024-livingdata-a42c348e.koyeb.app/communes/01001/bureaux-de-vote/1
 
 ### Projection
 
