@@ -6,7 +6,7 @@ Elle permet aussi d'effecter des projections sur la base d'un mécanisme de repo
 
 ## Données utilisées
 
-- [Résultats des élections européennes 2022](https://www.data.gouv.fr/fr/datasets/resultats-des-elections-europeennes-du-9-juin-2024/) - Ministère de l'Intérieur et des Outre-Mer
+- [Résultats des élections européennes 2024](https://www.data.gouv.fr/fr/datasets/resultats-des-elections-europeennes-du-9-juin-2024/) - Ministère de l'Intérieur et des Outre-Mer
 
 ## Pré-requis
 
